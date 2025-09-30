@@ -138,22 +138,36 @@ static void* aes_worker(void* arg) {
 }
 
 void aes_ecb_encrypt_upd(const uint8_t* input, uint8_t* output, size_t length, const uint8_t* key) {
-    size_t blocks = (length + 15) / 16;
-    size_t num_threads = 16; 
-    pthread_t threads[num_threads];
+    if (length == 0) return;
 
+    size_t blocks = (length + 15) / 16;
+    size_t max_threads = 8;
+    size_t num_threads = blocks < max_threads ? blocks : max_threads; // только нужное количество потоков
+
+    pthread_t threads[num_threads];
     size_t blocks_per_thread = (blocks + num_threads - 1) / num_threads;
 
     for (size_t t = 0; t < num_threads; t++) {
+        size_t start_block = t * blocks_per_thread;
+        if (start_block >= blocks) break; // лишние потоки не создаём
+
         aes_thread_task_t* task = malloc(sizeof(aes_thread_task_t));
+        if (!task) {
+            perror("Ошибка выделения памяти для задачи потока");
+            continue;
+        }
+
         task->input = input;
         task->output = output;
-        task->start_block = t * blocks_per_thread;
-        task->num_blocks = (task->start_block + blocks_per_thread <= blocks) ? blocks_per_thread : (blocks - task->start_block);
+        task->start_block = start_block;
+        task->num_blocks = (start_block + blocks_per_thread <= blocks) ? blocks_per_thread : (blocks - start_block);
         task->length = length;
         task->key = key;
 
-        pthread_create(&threads[t], NULL, aes_worker, task);
+        if (pthread_create(&threads[t], NULL, aes_worker, task) != 0) {
+            perror("Ошибка создания потока");
+            free(task);
+        }
     }
 
     for (size_t t = 0; t < num_threads; t++) {

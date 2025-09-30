@@ -86,7 +86,7 @@ static void process_aes(const char* input_filename,
     printf("Время шифрования: %.6f секунд\n", get_elapsed_time(start, end));
     write_file(encrypted_filename, encrypted_data, padded_length);
     printf("Файл зашифрован: %s\n", encrypted_filename);
-
+    
     free(input_data);
 
     // Дешифрование

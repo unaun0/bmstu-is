@@ -103,6 +103,12 @@ void aes_decrypt_upd(const uint8_t* input, uint8_t* output, const uint8_t* key) 
             output[i * 4 + j] = state[j][i];
 }
 
+#include <pthread.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+
 typedef struct {
     const uint8_t* input;
     uint8_t* output;
@@ -112,7 +118,7 @@ typedef struct {
     const uint8_t* key;
 } aes_thread_task_t;
 
-void* aes_decrypt_worker(void* arg) {
+static void* aes_decrypt_worker(void* arg) {
     aes_thread_task_t* task = (aes_thread_task_t*)arg;
 
     for (size_t i = 0; i < task->num_blocks; i++) {
@@ -131,24 +137,36 @@ void* aes_decrypt_worker(void* arg) {
 }
 
 void aes_ecb_decrypt_upd(const uint8_t* input, uint8_t* output, size_t length, const uint8_t* key) {
-    if (length % 16 != 0) return;
+    if (length == 0 || length % 16 != 0) return;
 
     size_t blocks = length / 16;
-    size_t num_threads = 8; // можно брать число ядер CPU
-    pthread_t threads[num_threads];
+    size_t max_threads = 8;
+    size_t num_threads = blocks < max_threads ? blocks : max_threads;
 
+    pthread_t threads[num_threads];
     size_t blocks_per_thread = (blocks + num_threads - 1) / num_threads;
 
     for (size_t t = 0; t < num_threads; t++) {
+        size_t start_block = t * blocks_per_thread;
+        if (start_block >= blocks) break;
+
         aes_thread_task_t* task = malloc(sizeof(aes_thread_task_t));
+        if (!task) {
+            perror("Ошибка выделения памяти для задачи потока");
+            continue;
+        }
+
         task->input = input;
         task->output = output;
-        task->start_block = t * blocks_per_thread;
-        task->num_blocks = (task->start_block + blocks_per_thread <= blocks) ? blocks_per_thread : (blocks - task->start_block);
+        task->start_block = start_block;
+        task->num_blocks = (start_block + blocks_per_thread <= blocks) ? blocks_per_thread : (blocks - start_block);
         task->length = length;
         task->key = key;
 
-        pthread_create(&threads[t], NULL, aes_decrypt_worker, task);
+        if (pthread_create(&threads[t], NULL, aes_decrypt_worker, task) != 0) {
+            perror("Ошибка создания потока");
+            free(task);
+        }
     }
 
     for (size_t t = 0; t < num_threads; t++) {
