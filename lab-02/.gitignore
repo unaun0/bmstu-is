@@ -1,0 +1,53 @@
+# Компилированные файлы
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.out
+*.a
+*.lib
+
+# Каталоги сборки
+/build/
+/bin/
+/Debug/
+/Release/
+
+# Лог-файлы
+*.log
+
+# Временные файлы
+*~
+*.tmp
+
+# Файлы IDE
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Конфигурационные файлы
+*.user
+*.suo
+
+# Макросы компилятора
+*.d
+
+# Архивы и пакеты
+*.tar.gz
+*.zip
+
+# Файлы под Linux
+*.swp
+*.bak
+
+# Ресурсы 
+/sources/
