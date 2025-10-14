@@ -141,7 +141,7 @@ void aes_ecb_encrypt_upd(const uint8_t* input, uint8_t* output, size_t length, c
     if (length == 0) return;
 
     size_t blocks = (length + 15) / 16;
-    size_t max_threads = 8;
+    size_t max_threads = 16;
     size_t num_threads = blocks < max_threads ? blocks : max_threads; // только нужное количество потоков
 
     pthread_t threads[num_threads];

@@ -57,8 +57,8 @@ static void process_aes(const char* input_filename,
     uint8_t* input_data = read_file(input_filename, &length);
     if (!input_data) return;
 
-    uint8_t key[AES_KEY_SIZE];
-    generate_key(key);
+    uint8_t key[AES_KEY_SIZE] = "MySecretAESKey16";
+    // generate_key(key);
     if (write_file(key_filename, key, AES_KEY_SIZE) != 0) {
         free(input_data);
         return;
